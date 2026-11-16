@@ -104,6 +104,7 @@ input[type=date]:disabled { border-color: var(--line); background: transparent; 
 input[type=checkbox] { width: 1rem; height: 1rem; margin: 0; accent-color: var(--accent); }
 .empty-state { padding-block: 1.55rem 2rem; border-top: 2px solid var(--accent); }
 .empty-state p { margin-top: .4rem; max-width: 56ch; line-height: 1.55; color: var(--quiet); }
+.empty-state button { margin-top: .9rem; }
 
 .workspace { margin-block: 2rem 3rem; }
 .section-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .5rem 1rem; padding-bottom: .7rem; }

@@ -15,6 +15,7 @@ const valueFormats = {
   deadline: formattedDate,
   penaltyRate: value => `${value}% в день`,
 };
+const demoFilenames = ['01_contract.txt', '02_amendment_signed.txt', '03_contract.txt', '04_contract.txt', '05_supplier_email.txt', '06_amendment_draft.txt'];
 
 let files = [];
 let fileErrors = [];
@@ -188,21 +189,35 @@ async function readFile(file) {
   }
 }
 
-byId('upload-button').addEventListener('click', () => filesInput.click());
-filesInput.addEventListener('change', async () => {
-  const selected = [...filesInput.files];
-  filesInput.value = '';
-  if (!selected.length) return;
+async function readDemoFile(filename) {
+  try {
+    const response = await fetch(new URL(`../documents/${filename}`, import.meta.url));
+    if (response.ok) return readFile(new File([await response.blob()], filename));
+  } catch {
+    // Report unavailable sample files in the same list as local read errors.
+  }
+  return { filename, message: 'Учебный файл недоступен. Попробуйте обновить страницу.' };
+}
+
+async function loadFiles(selected, read) {
   const version = ++uploadVersion;
   loading = true;
   render();
-  const loaded = await Promise.all(selected.map(readFile));
+  const loaded = await Promise.all(selected.map(read));
   if (version !== uploadVersion) return;
   files = loaded.filter(file => 'text' in file);
   fileErrors = loaded.filter(file => 'message' in file);
   uploaded = true;
   loading = false;
   render();
+}
+
+byId('demo-button').addEventListener('click', () => loadFiles(demoFilenames, readDemoFile));
+byId('upload-button').addEventListener('click', () => filesInput.click());
+filesInput.addEventListener('change', () => {
+  const selected = [...filesInput.files];
+  filesInput.value = '';
+  if (selected.length) loadFiles(selected, readFile);
 });
 
 for (const input of [asOfInput, filterToggle, beforeInput]) input.addEventListener('change', render);

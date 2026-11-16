@@ -10,6 +10,11 @@ const sourceDialog = byId('source-dialog');
 const sourceBody = byId('source-body');
 const numberFormat = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 });
 const kinds = { contract: 'Договор', amendment: 'Допсоглашение', draft: 'Проект допсоглашения', letter: 'Письмо поставщика' };
+const valueFormats = {
+  amount: value => `${numberFormat.format(value)} ₽`,
+  deadline: formattedDate,
+  penaltyRate: value => `${value}% в день`,
+};
 
 let files = [];
 let fileErrors = [];
@@ -60,9 +65,7 @@ function sourceButton(label, source) {
 
 function renderField(container, name, field, inProposal = false) {
   const labels = { missing: 'нет данных', review: 'требуется проверка' };
-  const value = field.status === 'confirmed'
-    ? (name === 'amount' ? `${numberFormat.format(field.value)} ₽` : formattedDate(field.value))
-    : labels[field.status];
+  const value = field.status === 'confirmed' ? valueFormats[name](field.value) : labels[field.status];
   const shown = field.source ? sourceButton(value, field.source) : node('span', value);
   shown.classList.add('value');
   if (field.status === 'review') shown.classList.add('warning');

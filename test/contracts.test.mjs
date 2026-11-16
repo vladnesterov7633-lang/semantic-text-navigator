@@ -108,3 +108,44 @@ test('an unlinked proposal and an unknown file appear in the review list', () =>
   assert.equal(result.proposals[0].linked, false);
   assert.equal(result.issues.length, 2);
 });
+
+test('originals cite the daily penalty rate or its explicit absence', () => {
+  const { rows, documents } = analyzeContracts(originals, asOf);
+  assert.deepEqual(rows.map(row => [row.number, row.penaltyRate?.status, row.penaltyRate?.value, row.penaltyRate?.source?.filename]), [
+    ['STN-101', 'confirmed', '0,1', first.filename],
+    ['STN-102', 'confirmed', '0,05', second.filename],
+    ['STN-103', 'missing', undefined, third.filename],
+  ]);
+  for (const { penaltyRate: { source } } of rows) {
+    assert.equal(source.quote, documents[source.documentId].paragraphs[source.index]);
+    assert.ok(documents[source.documentId].text.includes(source.quote));
+  }
+  assert.match(rows[0].penaltyRate.source.quote, /0,1%.*за каждый день, но не более 10%/);
+  assert.match(rows[2].penaltyRate.source.quote, /Ставка неустойки в тексте договора не установлена/);
+});
+
+test('an explicit daily penalty change uses the usual rules for date and signature', () => {
+  const changed = signed.text.replace('Остальные условия договора, в том числе размер неустойки, остаются без изменений.',
+    'Пункт 4.1 изложить в следующей редакции: «Неустойка за просрочку поставки составляет 0.2% стоимости поставки за каждый день, но не более 10% стоимости поставки».');
+  const amendment = { ...signed, text: changed };
+  assert.equal(analyzeContracts([first, amendment], '2026-02-28').rows[0].penaltyRate?.value, '0,1');
+  const { penaltyRate } = analyzeContracts([first, amendment], asOf).rows[0];
+  assert.equal(penaltyRate?.value, '0,2');
+  assert.equal(penaltyRate.source.filename, signed.filename);
+  const unsigned = { ...amendment, text: changed.replace('подписано обеими сторонами 01.03.2026', 'не подписано') };
+  const result = analyzeContracts([first, unsigned], asOf);
+  assert.equal(result.rows[0].penaltyRate.value, '0,1');
+  assert.equal(result.proposals[0].fields.penaltyRate.value, '0,2');
+});
+
+test('a cap or multiple tiers require review and a missing clause stays empty', () => {
+  for (const clause of [
+    'Неустойка за просрочку поставки составляет не более 10% стоимости поставки.',
+    'Неустойка за просрочку поставки составляет 0,1% за каждый день, с 11-го дня — 0,2% за каждый день.',
+  ]) {
+    const modified = { ...first, text: first.text.replace(/4\.1\. .+/, `4.1. ${clause}`) };
+    assert.equal(analyzeContracts([modified], asOf).rows[0].penaltyRate?.status, 'review');
+  }
+  const absent = { ...first, text: first.text.replace(/4\.1\. .+/, '4.1. Ответственность определяется законодательством.') };
+  assert.deepEqual(analyzeContracts([absent], asOf).rows[0].penaltyRate, { status: 'missing' });
+});

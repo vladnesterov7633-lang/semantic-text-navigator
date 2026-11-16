@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Semantic TextNavigator · Сверка договоров</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="src/app.mjs"></script>
+</head>
+<body>
+  <header class="masthead">
+    <div class="container masthead-content">
+      <span class="brand"><span class="document-mark" aria-hidden="true"></span>Semantic TextNavigator</span>
+    </div>
+  </header>
+  <main class="container">
+    <section class="intro" aria-labelledby="page-title">
+      <div>
+        <h1 id="page-title">Сверка договоров поставки</h1>
+        <p>Суммы, сроки и подтверждающие пункты договоров</p>
+      </div>
+      <div class="upload">
+        <button type="button" id="upload-button" class="primary">Загрузить комплект TXT</button>
+        <input type="file" id="files" accept=".txt,text/plain" multiple hidden>
+        <span>Новая загрузка заменяет комплект</span>
+      </div>
+    </section>
+    <section class="controls" aria-label="Параметры проверки">
+      <label class="date-control" for="as-of">Дата проверки
+        <input type="date" id="as-of" value="2026-03-10" required>
+      </label>
+      <div class="control-divider" aria-hidden="true"></div>
+      <div class="deadline-control">
+        <label class="checkbox" for="enable-filter"><input type="checkbox" id="enable-filter"> Срок раньше</label>
+        <input type="date" id="before" value="2026-04-01" aria-label="Срок раньше указанной даты" disabled>
+      </div>
+      <p id="upload-status" class="upload-status" role="status"></p>
+    </section>
+    <div id="empty-state" class="empty-state">
+      <h2>Загрузите документы поставки</h2>
+      <p>Выберите договоры и связанные с ними допсоглашения, проекты и письма в формате TXT.</p>
+    </div>
+    <div class="workspace" id="workspace" hidden>
+      <section class="contracts" aria-labelledby="contracts-title">
+        <div class="section-head">
+          <h2 id="contracts-title">Действующие условия</h2>
+          <p id="row-count" role="status"></p>
+        </div>
+        <div class="table-wrap" id="table-wrap">
+          <table aria-labelledby="contracts-title">
+            <thead><tr><th scope="col">Договор</th><th scope="col">Поставщик</th><th scope="col">Сумма, ₽</th><th scope="col">Срок поставки</th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+        <p id="no-rows" class="no-rows" hidden></p>
+        <div id="issues" class="file-issues" hidden>
+          <h3>Файлы для проверки</h3>
+          <ul id="issue-list"></ul>
+        </div>
+      </section>
+      <aside class="proposals" aria-labelledby="proposals-title">
+        <h2 id="proposals-title">Несогласованные изменения</h2>
+        <p class="section-note">Предложения по всему комплекту</p>
+        <div id="proposal-list"></div>
+      </aside>
+    </div>
+  </main>
+  <dialog id="source-dialog" aria-labelledby="source-title">
+    <div class="dialog-heading">
+      <div><p class="dialog-label">Исходный документ</p><h2 id="source-title"></h2></div>
+      <form method="dialog"><button class="secondary" autofocus>Закрыть</button></form>
+    </div>
+    <figure id="source-citation" class="citation" hidden>
+      <figcaption id="source-location"></figcaption>
+      <blockquote id="source-quote"></blockquote>
+    </figure>
+    <div id="source-body" class="source-body" tabindex="0" role="region" aria-label="Текст исходного документа"></div>
+  </dialog>
+</body>
+</html>

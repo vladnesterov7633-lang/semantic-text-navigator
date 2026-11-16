@@ -35,16 +35,16 @@ function formattedDate(value) {
 }
 
 function openDocument(document, source) {
+  byId('source-kind').textContent = kinds[document.kind] ?? 'Исходный документ';
   byId('source-title').textContent = document.filename;
-  byId('source-citation').hidden = !source;
+  const location = byId('source-location');
+  location.hidden = !source;
   if (source) {
-    byId('source-location').textContent = `Фрагмент ${source.index + 1} из ${document.paragraphs.length}`;
-    byId('source-quote').textContent = source.quote;
+    location.textContent = `Выделен фрагмент ${source.index + 1} из ${document.paragraphs.length}`;
   }
   const paragraphs = document.paragraphs.map((text, index) => {
-    const paragraph = node('p', text, 'source-paragraph');
-    if (index === source?.index) paragraph.classList.add('selected');
-    return paragraph;
+    const selected = index === source?.index;
+    return node(selected ? 'blockquote' : 'p', text, selected ? 'source-paragraph selected' : 'source-paragraph');
   });
   sourceBody.replaceChildren(...paragraphs);
   if (!sourceDialog.open) sourceDialog.showModal();
@@ -60,7 +60,9 @@ function documentButton(label, document, source) {
 }
 
 function sourceButton(label, source) {
-  return documentButton(label, result.documents[source.documentId], source);
+  const button = documentButton(label, result.documents[source.documentId], source);
+  button.title = source.filename;
+  return button;
 }
 
 function renderField(container, name, field, inProposal = false) {
@@ -69,6 +71,7 @@ function renderField(container, name, field, inProposal = false) {
   const shown = field.source ? sourceButton(value, field.source) : node('span', value);
   shown.classList.add('value');
   if (field.status === 'review') shown.classList.add('warning');
+  if (field.status === 'missing') shown.classList.add('missing');
   container.append(shown);
   if (field.reason) container.append(node('span', field.reason, 'field-note'));
   for (const source of field.sources ?? []) {
@@ -76,9 +79,8 @@ function renderField(container, name, field, inProposal = false) {
     line.append(sourceButton(`${source.filename} · фрагмент ${source.index + 1}`, source));
     container.append(line);
   }
-  if (field.source && !inProposal) {
-    if (field.amended) container.append(node('span', `Допсоглашение с ${formattedDate(field.effectiveDate)}`, 'field-note'));
-    container.append(node('span', field.source.filename, 'field-note'));
+  if (field.source && field.amended && !inProposal) {
+    container.append(node('span', `Допсоглашение с ${formattedDate(field.effectiveDate)}`, 'field-note amended'));
   }
 }
 
@@ -144,8 +146,10 @@ function render() {
   }
   const validDate = asOfInput.validity.valid;
   byId('empty-state').hidden = uploaded;
+  byId('controls').hidden = !uploaded;
   byId('workspace').hidden = !uploaded || !validDate;
   if (!uploaded) return;
+  byId('upload-button').textContent = 'Заменить комплект TXT';
   status.textContent = validDate ? `Прочитано файлов: ${files.length}` : 'Укажите дату проверки.';
   if (!validDate) return;
 
